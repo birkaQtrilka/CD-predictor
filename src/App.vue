@@ -15,7 +15,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #d2f590;
+  background: #f2f7f1;
   padding: 20px;
 }
 

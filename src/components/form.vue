@@ -80,6 +80,104 @@
 
       </div>
 
+      <!-- ── Advanced Inputs foldout ── -->
+      <div class="advanced-section">
+        <button
+          type="button"
+          class="advanced-toggle"
+          @click="showAdvanced = !showAdvanced"
+          :aria-expanded="showAdvanced"
+        >
+          <span class="advanced-toggle-label">
+            <svg class="adv-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd"
+                d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                clip-rule="evenodd" />
+            </svg>
+            Advanced Inputs
+          </span>
+          <svg
+            class="chevron"
+            :class="{ open: showAdvanced }"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path fill-rule="evenodd"
+              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+              clip-rule="evenodd" />
+          </svg>
+        </button>
+
+        <div class="advanced-body" :class="{ expanded: showAdvanced }">
+          <p class="advanced-hint">
+            These fields are optional. If left at their defaults they will be imputed
+            by the model from population statistics.
+          </p>
+          <div class="grid">
+
+            <div class="field">
+              <label>Resting Pulse <span class="unit">(bpm)</span></label>
+              <input v-model.number="form.pulse" type="number" min="20" max="300" />
+            </div>
+
+            <div class="field">
+              <label>Waist Circumference <span class="unit">(cm)</span></label>
+              <input v-model.number="form.waist" type="number" min="40" max="250" step="0.1" />
+            </div>
+
+            <div class="field">
+              <label>Non-HDL Cholesterol <span class="unit">(mg/dL)</span></label>
+              <input v-model.number="form.non_hdl" type="number" min="10" max="500"
+                placeholder="Auto-derived if blank" />
+            </div>
+
+            <div class="field">
+              <label>Sedentary Time <span class="unit">(min/day)</span></label>
+              <input v-model.number="form.sedentary_min" type="number" min="0" max="1440" />
+            </div>
+
+            <div class="field">
+              <label>Sleep Duration <span class="unit">(hrs/night)</span></label>
+              <input v-model.number="form.sleep_hours" type="number" min="0" max="24" step="0.5" />
+            </div>
+
+            <div class="field">
+              <label>Education Level <span class="unit">(1–5)</span></label>
+              <select v-model.number="form.education">
+                <option :value="null">— Not specified —</option>
+                <option value="1">1 – Less than 9th grade</option>
+                <option value="2">2 – 9th–11th grade</option>
+                <option value="3">3 – High school / GED</option>
+                <option value="4">4 – Some college / AA</option>
+                <option value="5">5 – College graduate</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Income-to-Poverty Ratio</label>
+              <input v-model.number="form.income" type="number" min="0" step="0.1"
+                placeholder="e.g. 2.5" />
+            </div>
+
+            <div class="field">
+              <label>Race / Ethnicity</label>
+              <select v-model.number="form.race">
+                <option :value="null">— Not specified —</option>
+                <option value="1">Mexican American</option>
+                <option value="2">Other Hispanic</option>
+                <option value="3">Non-Hispanic White</option>
+                <option value="4">Non-Hispanic Black</option>
+                <option value="6">Non-Hispanic Asian</option>
+                <option value="7">Other / Multiracial</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <!-- ── end Advanced Inputs ── -->
+
       <button class="btn" type="submit">Submit</button>
 
 <div v-if="result" class="results">
@@ -137,6 +235,7 @@
 import { ref, computed, reactive } from "vue"
 
 const form = reactive({
+  // ── Core fields ──
   age: 45,
   sbp: 120,
   dbp: 80,
@@ -147,9 +246,20 @@ const form = reactive({
   female: false,
   diabetes_dx: false,
   smoking: false,
-  family_history: false
+  family_history: false,
+
+  // ── Advanced / optional fields ──
+  pulse: 72,
+  waist: 88,
+  non_hdl: null,       // auto-derived from total_chol - hdl when null
+  sedentary_min: 360,
+  sleep_hours: 7,
+  education: null,
+  income: null,
+  race: null,
 })
 
+const showAdvanced = ref(false)
 const submitted = ref(false)
 const result = ref(null)
 const isLoading = ref(false)
@@ -174,7 +284,8 @@ async function handleSubmit() {
     return
   }
 
-  const payload = {
+  // Build payload — omit null/undefined so the backend imputes them
+  const raw = {
     age: form.age,
     female: form.female ? 1 : 0,
     sbp: form.sbp,
@@ -185,8 +296,22 @@ async function handleSubmit() {
     hba1c: form.hba1c,
     diabetes_dx: form.diabetes_dx ? 1 : 0,
     smoking: form.smoking ? 1 : 0,
-    family_history: form.family_history ? 1 : 0
+    family_history: form.family_history ? 1 : 0,
+    // Advanced
+    pulse: form.pulse,
+    waist: form.waist,
+    non_hdl: form.non_hdl,
+    sedentary_min: form.sedentary_min,
+    sleep_hours: form.sleep_hours,
+    education: form.education,
+    income: form.income,
+    race: form.race,
   }
+
+  // Strip nulls so the backend treats them as missing
+  const payload = Object.fromEntries(
+    Object.entries(raw).filter(([, v]) => v !== null && v !== undefined)
+  )
 
   try {
     isLoading.value = true;
@@ -219,7 +344,9 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-
+*{
+  font-family: monospace;
+}
 .form-wrapper {
   position: relative;
   width: 100%;
@@ -231,7 +358,7 @@ async function handleSubmit() {
   inset: 0;
   background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(3px);
-  border-radius: 16px;         /* matches .card */
+  border-radius: 16px;
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -259,6 +386,85 @@ async function handleSubmit() {
   animation: spin 0.75s linear infinite;
 }
 
+/* ── Advanced foldout ── */
+.advanced-section {
+  margin-top: 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.advanced-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  background: #f8fafc;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  transition: background 0.15s;
+  gap: 8px;
+}
+
+.advanced-toggle:hover {
+  background: #f1f5f9;
+}
+
+.advanced-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adv-icon {
+  width: 16px;
+  height: 16px;
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+.chevron {
+  width: 18px;
+  height: 18px;
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.advanced-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.2s ease;
+  padding: 0 16px;
+}
+
+.advanced-body.expanded {
+  max-height: 600px;
+  padding: 16px;
+}
+
+.advanced-hint {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.unit {
+  font-weight: 400;
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+/* ── shared field / grid styles ── */
 .factor-list {
   list-style: none;
   padding: 0;
@@ -296,6 +502,7 @@ async function handleSubmit() {
   font-size: 13px;
   opacity: 0.8;
 }
+
 .card {
   width: 100%;
   max-width: 800px;
@@ -330,15 +537,18 @@ label {
   color: #374151;
 }
 
-input {
+input, select {
   padding: 10px;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   outline: none;
   transition: 0.2s;
+  background: white;
+  font-size: 14px;
+  color: #111827;
 }
 
-input:focus {
+input:focus, select:focus {
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
 }
@@ -371,15 +581,6 @@ input:focus {
 
 .btn:hover {
   background: #4338ca;
-}
-
-.output {
-  margin-top: 16px;
-  background: #0f172a;
-  color: #e2e8f0;
-  padding: 12px;
-  border-radius: 10px;
-  overflow-x: auto;
 }
 
 .results {
@@ -436,6 +637,7 @@ input:focus {
 
 .result-card.risk.high   { border-color: #fca5a5; background: #fef2f2; }
 .result-card.risk.high   .result-value { color: #dc2626; }
+
 @media (max-width: 640px) {
   .grid {
     grid-template-columns: 1fr;
