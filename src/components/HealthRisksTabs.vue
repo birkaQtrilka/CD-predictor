@@ -1,6 +1,5 @@
 <template>
   <div class="form-wrapper">
-    <!-- Overlay: only rendered while loading -->
     <div class="overlay" v-if="isLoading">
       <div class="spinner" />
       <span class="overlay-text">Analyzing risk factors…</span>
@@ -8,7 +7,7 @@
 
     <div class="card">
 
-      <!-- ── Tabs Header ── -->
+      <!-- Tabs Header -->
       <div class="tabs-header">
         <button
           v-for="tab in tabs"
@@ -22,7 +21,7 @@
         </button>
       </div>
 
-      <!-- ── Tab Content ── -->
+      <!-- Tab Content -->
       <div class="tab-content">
 
         <FormTab
@@ -48,12 +47,12 @@
 </template>
 
 <script setup>
-import { ref, reactive } from "vue"
+import { ref } from "vue" // Removed 'reactive'
 import FormTab from "./FormTab.vue"
 import AiTab from "./AITab.vue"
 import StatisticsTab from "./MortalityTab.vue"
 
-// ── Tabs Setup ──
+//Tabs Setup
 const activeTab = ref("form")
 const tabs = [
   { id: "form",       name: "Form"       },
@@ -61,8 +60,9 @@ const tabs = [
   { id: "statistics", name: "Statistics" },
 ]
 
-// ── Shared form state (passed down as props) ──
-const form = reactive({
+// Changed to `ref` so the entire object can be safely replaced via v-model
+const form = ref({
+  // Core Clinical Fields
   age:          45,
   sbp:          120,
   dbp:          80,
@@ -72,8 +72,9 @@ const form = reactive({
   hba1c:        5.5,
   female:       false,
   diabetes_dx:  false,
-  smoking:      false,
+  smoking:      0, // 0=never, 1=former, 2=current
   family_history: false,
+  
   // Advanced / optional
   pulse:         72,
   waist:         88,
@@ -83,6 +84,25 @@ const form = reactive({
   education:     null,
   income:        null,
   race:          null,
+
+  // Mortality-specific fields
+  htn_dx:        false,
+  highchol_dx:   false,
+  uacr:          null,
+  creatinine:    null,
+  ldl:           null,
+  uric_acid:     null,
+  wbc:           null,
+  crp:           null,
+  insulin:       null,
+  bun:           null,
+  glucose:       null,
+
+  // Lifestyle / AI fields
+  exercise_days_per_week: null,
+  diet_quality:           null,
+  alcohol_units_per_week: null,
+  stress_level:           null,
 })
 
 const result    = ref(null)
@@ -105,45 +125,63 @@ async function handlePost(payload, url) {
     return JSON.parse(text);
 }
 
-// ── Submit handler lives here so the result is available to all tabs ──
+// Submit handler lives here so the result is available to all tabs
 async function handleSubmit() {
+  const f = form.value // Extract `.value` for clean formatting below
+
   const raw = {
-    age:            form.age,
-    female:         form.female       ? 1 : 0,
-    sbp:            form.sbp,
-    dbp:            form.dbp,
-    bmi:            form.bmi,
-    total_chol:     form.total_chol,
-    hdl:            form.hdl,
-    hba1c:          form.hba1c,
-    diabetes_dx:    form.diabetes_dx  ? 1 : 0,
-    smoking:        form.smoking      ? 1 : 0,
-    family_history: form.family_history ? 1 : 0,
-    pulse:          form.pulse,
-    waist:          form.waist,
-    non_hdl:        form.non_hdl,
-    sedentary_min:  form.sedentary_min,
-    sleep_hours:    form.sleep_hours,
-    education:      form.education,
-    income:         form.income,
-    race:           form.race,
+    age:            f.age,
+    female:         f.female       ? 1 : 0,
+    sbp:            f.sbp,
+    dbp:            f.dbp,
+    bmi:            f.bmi,
+    total_chol:     f.total_chol,
+    hdl:            f.hdl,
+    hba1c:          f.hba1c,
+    diabetes_dx:    f.diabetes_dx  ? 1 : 0,
+    smoking:        f.smoking,
+    family_history: f.family_history ? 1 : 0,
+    pulse:          f.pulse,
+    waist:          f.waist,
+    non_hdl:        f.non_hdl,
+    sedentary_min:  f.sedentary_min,
+    sleep_hours:    f.sleep_hours,
+    education:      f.education,
+    income:         f.income,
+    race:           f.race,
+
+    // Mortality indicators
+    htn_dx:         f.htn_dx       ? 1 : 0,
+    highchol_dx:    f.highchol_dx  ? 1 : 0,
+    uacr:           f.uacr,
+    creatinine:     f.creatinine,
+    ldl:            f.ldl,
+    uric_acid:      f.uric_acid,
+    wbc:            f.wbc,
+    crp:            f.crp,
+    insulin:        f.insulin,
+    bun:            f.bun,
+    glucose:        f.glucose,
+
+    // Lifestyle & AI indicators
+    exercise_days_per_week: f.exercise_days_per_week,
+    diet_quality:           f.diet_quality,
+    alcohol_units_per_week: f.alcohol_units_per_week,
+    stress_level:           f.stress_level,
   }
 
-  // Strip nulls/undefined so the backend imputes them
+  // Strip nulls/undefined/empty string so the backend imputes them via medians
   const payload = Object.fromEntries(
-    Object.entries(raw).filter(([, v]) => v !== null && v !== undefined)
+    Object.entries(raw).filter(([, v]) => v !== null && v !== undefined && v !== "")
   )
 
   try {
     isLoading.value = true
-    console.log(payload)
+    console.log("Submitting Payload:", payload)
+    
     result.value = await handlePost(payload, "predict/explain");
     mortalityResult.value = await handlePost(payload, "mortality/predict");
     AIresult.value = await handlePost(payload, "predict/suggestions");
-
-    console.log(result.value)
-    console.log(mortalityResult.value)
-    console.log(AIresult.value)
     
   } catch (err) {
     console.error("Request failed:", err)

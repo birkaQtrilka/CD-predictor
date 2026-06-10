@@ -8,19 +8,19 @@
     </div>
 
     <div v-else class="results">
-      <!-- ── AI Disabled ── -->
+      <!-- AI Disabled -->
       <div v-if="AIResult.status === 'disabled'" class="result-card full warn">
         <span class="result-label">Feature Disabled</span>
         <span class="result-desc">The AI generation is currently disabled (API key not set on the backend).</span>
       </div>
 
-      <!-- ── AI Error ── -->
+      <!-- AI Error -->
       <div v-else-if="AIResult.status === 'error'" class="result-card full error">
         <span class="result-label">Generation Failed</span>
         <span class="result-desc">{{ AIResult.error_detail || 'An unknown error occurred while contacting the AI.' }}</span>
       </div>
 
-      <!-- ── AI Success ── -->
+      <!-- AI Success -->
       <div v-else-if="AIResult.suggestions" class="result-card full ai-content">
         <div class="ai-header">
           <span class="result-label">Actionable Plan</span>
@@ -86,7 +86,7 @@ const formattedSuggestions = computed(() => {
 
 .empty-icon { font-size: 32px; margin-bottom: 12px; }
 
-/* ── Results Grid ── */
+/* Results Grid */
 .results {
   display: flex;
   flex-direction: column;
@@ -128,7 +128,7 @@ const formattedSuggestions = computed(() => {
 }
 .error .result-label { color: #dc2626; }
 
-/* ── AI Suggestions Text ── */
+/* AI Suggestions Text */
 .ai-header {
   border-bottom: 1px solid #e2e8f0;
   padding-bottom: 12px;
@@ -136,10 +136,12 @@ const formattedSuggestions = computed(() => {
 }
 
 .suggestions-text {
-  font-size: 14.5px;
-  line-height: 1.7;
+  font-size: 17px;
+  line-height: 1.6;
   color: #1f2937;
-  white-space: pre-wrap; /* Keeps LLM \n newlines intact */
+  white-space: pre-wrap;
+  font-family: 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-weight: 400;
 }
 
 /* Scoped specifically targeting any v-html generated <strong> tags */
