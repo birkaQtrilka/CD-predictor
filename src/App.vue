@@ -1,10 +1,10 @@
 <script setup lang="ts">
-  import MyForm from './components/form.vue'
+  import HeathRisksTabs from './components/HealthRisksTabs.vue'
 </script>
 
 <template>
-  <div class="page"> 
-    <MyForm/>
+  <div class="page">
+    <HeathRisksTabs/>
   </div>
 </template>
 
@@ -14,7 +14,6 @@
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
   background: #f2f7f1;
   padding: 20px;
 }
